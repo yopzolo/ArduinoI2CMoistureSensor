@@ -1,9 +1,17 @@
 #include <Wire.h>
 
+  //TODO 
+  // read analog pins
+  // reverse current direction at each measure
+  //
+  // For test readablity replace count, with currentMillis/numberofcalls/3/4/5/6
+  //
+  // make adress configurable with digital pins
+  // write read frequency via I2C
+  // read frequency via I2C
+
 void setup()
-{
-  
-  //TODO make adress configurable with digital pins
+{  
   Wire.begin(2);
   Wire.onRequest(requestEvent);
 }
