@@ -1,48 +1,97 @@
 #include <Wire.h>
 
-  //TODO 
-  // read analog pins
-  // reverse current direction at each measure
-  //
-  // For test readablity replace count, with currentMillis/numberofcalls/3/4/5/6
-  //
-  // make adress configurable with digital pins
-  // write read frequency via I2C
-  // read frequency via I2C
+#define ARRAY_LENGTH(x)  (sizeof(x) / sizeof((x)[0]))
+
+//#define LOG_SERIAL
+
+//TODO 
+//
+// make adress configurable with digital pins
+// write read frequency via I2C
+// read frequency via I2C
+
+const int sensorPins[][2] = {
+  {
+    A0,4            }
+  ,{
+    A1,3            }
+  ,{
+    A2,2            }
+  ,{
+    A3,1            }
+};
+
+const int sensor_SIZE = ARRAY_LENGTH(sensorPins);
+unsigned int A_Values[sensor_SIZE];
 
 void setup()
 {  
-  Wire.begin(2);
+  Wire.begin(4);
   Wire.onRequest(requestEvent);
+
+#ifdef LOG_SERIAL
+  Serial.begin(9600);
+#endif
 }
 
-unsigned int A_Values[6] = {
-  0,0,0,0,0,0};
 
 void loop()
 {
-  delay(50);
+  for (int i=0;i<sensor_SIZE;i++){
 
-  A_Values[0]++;
-  for (int i=0;i<5;i++){
-    if (A_Values[i]%3 == 0)
-      A_Values[i+1]++;
-    else
-      break;
+    pinMode(sensorPins[i][0], INPUT_PULLUP);
+    pinMode(sensorPins[i][1], OUTPUT);
+    digitalWrite(sensorPins[i][1], LOW);
+    delay(50);
+
+    A_Values[i] = 1023-analogRead(sensorPins[i][0]); //Attention à corriger ça
+
+    pinMode(sensorPins[i][0], OUTPUT);
+    digitalWrite(sensorPins[i][0], LOW);
+    delay(50);
+
+    digitalWrite(sensorPins[i][1], LOW);
+    digitalWrite(sensorPins[i][0], LOW);
   }
+
+#ifdef LOG_SERIAL
+  for (int i=0;i<sensor_SIZE;i++){
+    Serial.print(A_Values[i]);    
+    Serial.print("|");
+  }
+  Serial.println();
+#endif
+
+  delay(900);
+
 }
 
 void requestEvent()
 {
   byte buffer[12];
 
-  for (int i=0;i<6;i++){
+  for (int i=0;i<sensor_SIZE;i++){
     buffer[2*i] = A_Values[i] >> 8;
     buffer[2*i+1] = A_Values[i] & 0xff;
   }
 
   Wire.write(buffer, 12);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

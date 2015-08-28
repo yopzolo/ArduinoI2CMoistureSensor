@@ -18,6 +18,6 @@ void setup()
       Serial.print(value);    
       Serial.print("|");
     }
-      Serial.println();
+      Serial.print("\r");
     delay(75);
   }
