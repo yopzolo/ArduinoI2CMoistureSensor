@@ -6,7 +6,9 @@
 
 //TODO 
 //
-// make adress configurable with digital pins
+// make adress configurable with digital pins or via I2C ?
+
+// store read frequency in EEPROM
 // write read frequency via I2C
 // read frequency via I2C
 
@@ -34,7 +36,6 @@ void setup()
 #endif
 }
 
-
 void loop()
 {
   for (int i=0;i<sensor_SIZE;i++){
@@ -53,7 +54,6 @@ void loop()
 
     digitalWrite(sensorPins[i][1], LOW);
     digitalWrite(sensorPins[i][0], LOW);
-    delay(100);
   }
 
 #ifdef LOG_SERIAL
@@ -64,8 +64,7 @@ void loop()
   Serial.println();
 #endif
 
-  delay(800);
-
+  delay(600);
 }
 
 void requestEvent()
