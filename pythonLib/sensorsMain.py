@@ -1,18 +1,18 @@
 from ArduinoMoistureSensor import ArduinoMoistureSensor
-import "time"
 
-can1 = ArduinoMoistureSensor(1,4)
-can2 = ArduinoMoistureSensor(1,8)
+cans = [ArduinoMoistureSensor(1,4),ArduinoMoistureSensor(1,8)]
+
+header = "";
+for can in cans:
+	can.read()
+	header+="\t"+str(can.busAdress)
 
 
-while True:
-	can1.read()
-	can2.read()
-	
-	for i in range (0,6):
-		print can1.sensors[i]
-	for i in range (0,6):
-		print can2.sensors[i]
+print header
 
-	print "-----"
-	time.sleep(1)
+for i in range(0,len(cans[0].sensors)):
+	row = str(i);
+	for can in cans:
+		row += "\t"+str(can.sensors[i]) 
+	print row
+
