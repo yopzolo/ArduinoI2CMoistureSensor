@@ -12,13 +12,13 @@
 
 const int sensorPins[][2] = {
   {
-    A0,4            }
+    A0,4              }
   ,{
-    A1,3            }
+    A1,3              }
   ,{
-    A2,2            }
+    A2,2              }
   ,{
-    A3,1            }
+    A3,1              }
 };
 
 const int sensor_SIZE = ARRAY_LENGTH(sensorPins);
@@ -48,10 +48,12 @@ void loop()
 
     pinMode(sensorPins[i][0], OUTPUT);
     digitalWrite(sensorPins[i][0], LOW);
+    digitalWrite(sensorPins[i][1], HIGH);
     delay(50);
 
     digitalWrite(sensorPins[i][1], LOW);
     digitalWrite(sensorPins[i][0], LOW);
+    delay(100);
   }
 
 #ifdef LOG_SERIAL
@@ -62,7 +64,7 @@ void loop()
   Serial.println();
 #endif
 
-  delay(900);
+  delay(800);
 
 }
 
@@ -77,6 +79,7 @@ void requestEvent()
 
   Wire.write(buffer, 12);
 }
+
 
 
 
