@@ -4,7 +4,6 @@ cans = [ArduinoMoistureSensor(1,4),ArduinoMoistureSensor(1,8)]
 
 header = "";
 for can in cans:
-	can.read()
 	header+="\t"+str(can.busAdress)
 
 
