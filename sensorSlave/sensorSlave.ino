@@ -6,29 +6,40 @@
 
 //TODO 
 //
-// make adress configurable with digital pins or via I2C ?
-
 // store read frequency in EEPROM
 // write read frequency via I2C
 // read frequency via I2C
 
 const int sensorPins[][2] = {
   {
-    A0,4              }
+    A0,4}
   ,{
-    A1,3              }
+    A1,3}
   ,{
-    A2,2              }
+    A2,2}
   ,{
-    A3,1              }
+    A3,1}
 };
 
 const int sensor_SIZE = ARRAY_LENGTH(sensorPins);
 unsigned int A_Values[sensor_SIZE];
 
+const int addressPins[] = {
+  6,7,8,9};
+
 void setup()
 {  
-  Wire.begin(4);
+  int i2cAddress = 0;
+  for (int i=0;i<ARRAY_LENGTH(addressPins);i++){
+    pinMode(addressPins[i], INPUT_PULLUP);
+    if (digitalRead(addressPins[i]) == HIGH){
+      i2cAddress += (1<<i);      
+    }
+  }
+
+  Wire.begin(i2cAddress);
+
+  Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 
 #ifdef LOG_SERIAL
@@ -80,28 +91,6 @@ void requestEvent()
 }
 
 
+void receiveEvent(int len){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
