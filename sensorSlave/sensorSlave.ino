@@ -12,13 +12,13 @@
 
 const int sensorPins[][2] = {
   {
-    A0,4}
+    A0,4          }
   ,{
-    A1,3}
+    A1,3          }
   ,{
-    A2,2}
+    A2,2          }
   ,{
-    A3,1}
+    A3,1          }
 };
 
 const int sensor_SIZE = ARRAY_LENGTH(sensorPins);
@@ -32,9 +32,13 @@ void setup()
   int i2cAddress = 0;
   for (int i=0;i<ARRAY_LENGTH(addressPins);i++){
     pinMode(addressPins[i], INPUT_PULLUP);
+
     if (digitalRead(addressPins[i]) == HIGH){
       i2cAddress += (1<<i);      
     }
+
+    pinMode(addressPins[i], OUTPUT);
+    digitalWrite(addressPins[i], LOW);
   }
 
   Wire.begin(i2cAddress);
@@ -54,14 +58,36 @@ void loop()
     pinMode(sensorPins[i][0], INPUT_PULLUP);
     pinMode(sensorPins[i][1], OUTPUT);
     digitalWrite(sensorPins[i][1], LOW);
-    delay(50);
+  }
+
+  unsigned long currentTime = millis();
+
+#ifdef LOG_SERIAL
+  Serial.println(millis());
+#endif
+
+  delay(100);
+
+  for (int i=0;i<sensor_SIZE;i++){
 
     A_Values[i] = 1023-analogRead(sensorPins[i][0]); //Attention à corriger ça
+  }
+
+  for (int i=0;i<sensor_SIZE;i++){
 
     pinMode(sensorPins[i][0], OUTPUT);
     digitalWrite(sensorPins[i][0], LOW);
     digitalWrite(sensorPins[i][1], HIGH);
-    delay(50);
+  }
+
+#ifdef LOG_SERIAL
+  Serial.println(millis());
+  Serial.println(millis() - currentTime);
+#endif
+
+  delay(millis() - currentTime);
+
+  for (int i=0;i<sensor_SIZE;i++){
 
     digitalWrite(sensorPins[i][1], LOW);
     digitalWrite(sensorPins[i][0], LOW);
@@ -75,7 +101,8 @@ void loop()
   Serial.println();
 #endif
 
-  delay(600);
+  delay(900); // ici  ~ une seconde est passé + quelques microsecondes
+  delay(60*1000); // 1 min de pause
 }
 
 void requestEvent()
@@ -94,3 +121,8 @@ void requestEvent()
 void receiveEvent(int len){
 
 }
+
+
+
+
+
