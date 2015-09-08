@@ -23,6 +23,7 @@ const int sensorPins[][2] = {
 
 const int sensor_SIZE = ARRAY_LENGTH(sensorPins);
 unsigned int A_Values[sensor_SIZE];
+unsigned long A_values_timestamp;
 
 const int addressPins[] = {
   6,7,8,9};
@@ -60,7 +61,7 @@ void loop()
     digitalWrite(sensorPins[i][1], LOW);
   }
 
-  unsigned long currentTime = millis();
+  A_values_timestamp = millis();
 
 #ifdef LOG_SERIAL
   Serial.println(millis());
@@ -82,10 +83,11 @@ void loop()
 
 #ifdef LOG_SERIAL
   Serial.println(millis());
-  Serial.println(millis() - currentTime);
+  Serial.println((unsigned long)(millis() - A_values_timestamp));
 #endif
 
-  delay(millis() - currentTime);
+  unsigned long timeWithCurrent = (unsigned long)(millis() - A_values_timestamp);
+  delay(timeWithCurrent);
 
   for (int i=0;i<sensor_SIZE;i++){
 
@@ -101,26 +103,41 @@ void loop()
   Serial.println();
 #endif
 
-  delay(900); // ici  ~ une seconde est passé + quelques microsecondes
-  delay(60*1000); // 1 min de pause
+  delay((unsigned long)15*60*1000 - 2*timeWithCurrent); // 15 min de pause
 }
 
 void requestEvent()
 {
-  byte buffer[12];
+  int bufferSize = sizeof(int)*(sensor_SIZE)+sizeof(long);
+  byte buffer[bufferSize];
 
   for (int i=0;i<sensor_SIZE;i++){
-    buffer[2*i] = A_Values[i] >> 8;
-    buffer[2*i+1] = A_Values[i] & 0xff;
+    intToByte(A_Values[i], &buffer[sizeof(int)*i]);
   }
+  longToByte((unsigned long)(millis() - A_values_timestamp),&buffer[sizeof(int)*(sensor_SIZE)]);
 
-  Wire.write(buffer, 12);
+  Wire.write(buffer, bufferSize);
 }
 
 
 void receiveEvent(int len){
 
 }
+
+void intToByte(unsigned int value, byte *buffer){
+  for (int i = 0;i<sizeof(int);i++){
+    buffer[i] = value >> ((sizeof(int)-1-i)*8);
+  }
+}
+
+void longToByte(unsigned long value, byte *buffer){
+  for (int i = 0;i<sizeof(long);i++){
+    buffer[i] = value >> ((sizeof(long)-1-i)*8);
+  }
+}
+
+
+
 
 
 
