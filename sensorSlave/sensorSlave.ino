@@ -3,7 +3,7 @@
 #define ARRAY_LENGTH(x)  (sizeof(x) / sizeof((x)[0]))
 
 //#define LOG_SERIAL
-
+#define HARDCODEDADRESS 8
 //TODO 
 //
 // store read frequency in EEPROM
@@ -30,6 +30,7 @@ const int addressPins[] = {
 
 void setup()
 {  
+#ifndef HARDCODEDADRESS
   int i2cAddress = 0;
   for (int i=0;i<ARRAY_LENGTH(addressPins);i++){
     pinMode(addressPins[i], INPUT_PULLUP);
@@ -43,6 +44,9 @@ void setup()
   }
 
   Wire.begin(i2cAddress);
+#else
+  Wire.begin(HARDCODEDADRESS);
+#endif
 
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
