@@ -10,6 +10,7 @@ with open('./sensors.log', "a") as logFile:
 
 	for can in cans:
 		can.read()
+		logFile.write("\t"+can.time.isoformat())
 
 		for sensor in can.sensors:
 	                logFile.write("\t"+str(sensor))
