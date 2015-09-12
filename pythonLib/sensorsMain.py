@@ -1,6 +1,6 @@
 from ArduinoMoistureSensor import ArduinoMoistureSensor
 
-cans = [ArduinoMoistureSensor(1,4),ArduinoMoistureSensor(1,6),ArduinoMoistureSensor(1,8)]
+cans = [ArduinoMoistureSensor(1,4),ArduinoMoistureSensor(1,8)]
 
 header = "";
 timeHeader = "";

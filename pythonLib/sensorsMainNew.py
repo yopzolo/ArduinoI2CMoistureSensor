@@ -1,6 +1,7 @@
+import sys
 from ArduinoMoistureSensor import ArduinoMoistureSensor
 
-cans = [ArduinoMoistureSensor(1,6)]
+cans = [ArduinoMoistureSensor(int(sys.argv[1]),int(sys.argv[2]))]
 
 header = "";
 for can in cans:
