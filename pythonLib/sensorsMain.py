@@ -5,6 +5,7 @@ cans = [ArduinoMoistureSensor(1,4),ArduinoMoistureSensor(1,8)]
 header = "";
 timeHeader = "";
 for can in cans:
+	can.read();
 	header+="\t"+str(can.busAdress)+"\t"
 	timeHeader+="\t"+can.time.strftime('%X')
 

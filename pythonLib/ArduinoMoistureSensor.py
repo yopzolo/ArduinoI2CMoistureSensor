@@ -5,25 +5,26 @@ from datetime import datetime, time, timedelta
 class ArduinoMoistureSensor (object):
 
 	def __init__(self, bus, adress):
-		self.sensors = [0,0,0,0]
-		self.time = 0
+		self.sensorCount = 0
+		self.sensors = []
+		self.time = datetime.now()
 
 		self.bus = smbus.SMBus(bus)
 		self.__busAdress = adress
-		#self.period = 0
-
-		self.read()
 
 	def read(self):
 		data = self.bus.read_i2c_block_data(self.busAdress,0) # TODO change the default register
 
-		for i in range(0,4):
-			self.sensors[i] = (data[2*i] << 8)+ data[2*i+1]
-
 		timeOffset = 0
-		for i in range(0,4):
-			timeOffset += data[8+i] << ((3-i)*8)
-		self.time = datetime.now() - timedelta(milliseconds=timeOffset)
+                for i in range(0,4):
+                        timeOffset += data[i] << ((3-i)*8)
+                self.time = datetime.now() - timedelta(milliseconds=timeOffset)
+
+		self.sensorCount = data[4]
+		self.sensors = []
+
+		for i in range(0,self.sensorCount):
+			self.sensors.append((data[5+2*i] << 8)+ data[6+2*i])
 
 	@property
 	def period(self):
