@@ -6,7 +6,7 @@
 /***************************************/
 
 #define DEFAULT_I2C_ADRESS 3           
-#define NUMBER_OF_SENSORS 4  // 4 on mini,uno - 6 on promini
+#define NUMBER_OF_SENSORS 6  // 4 on mini,uno - 6 on promini
 
 //#define LOG_SERIAL
 //#define FAKESENSORSWITHCOUNTERS
@@ -17,17 +17,17 @@ int i2cAdress = DEFAULT_I2C_ADRESS;
 
 const int allSsensorPins[][2] = {
   {
-    A0,5                              }
+    A0,5                                        }
   ,{
-    A1,4                              }
+    A1,4                                        }
   ,{
-    A2,3                              }
+    A2,3                                        }
   ,{
-    A3,2                              }
+    A3,2                                        }
   ,{
-    A6,6                              }
+    A6,6                                        }
   ,{
-    A7,7                              }
+    A7,7                                        }
 
 };
 
@@ -46,16 +46,23 @@ volatile int last_command = 0;
 
 void setup()
 {  
-
-  for (int i=0;i<sensor_SIZE;i++){
-    sensorPins[i][0] = allSsensorPins[i][0];
-    sensorPins[i][1] = allSsensorPins[i][1];
-  }
-
 #ifdef LOG_SERIAL
   Serial.begin(9600);
   Serial.println("booting");
 #endif
+
+  for (int i=0;i<sensor_SIZE;i++){
+    sensorPins[i][0] = allSsensorPins[i][0];
+    sensorPins[i][1] = allSsensorPins[i][1];
+
+#ifdef LOG_SERIAL
+    Serial.print("active sensors : ");
+    Serial.print(sensorPins[i][0]);
+    Serial.print(" - ");
+    Serial.print(sensorPins[i][1]);
+    Serial.println("");
+#endif
+  }
 
   i2cAdress = readLongFromEEPROM(5);
   if (i2cAdress < 3 || i2cAdress > 77)
@@ -63,21 +70,23 @@ void setup()
   Wire.begin(i2cAdress);
 
 #ifdef LOG_SERIAL
-Serial.print("i2c adress ");
+  Serial.print("i2c adress : ");
   Serial.println(i2cAdress); 
 #endif
 
 
   A_Values_Period = readLongFromEEPROM(1);
 #ifdef LOG_SERIAL
-  Serial.print("measure period "); 
+  Serial.print("measure period : "); 
   Serial.println(A_Values_Period); 
 #endif
 
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 
-  Serial.print("setup finished"); 
+#ifdef LOG_SERIAL
+  Serial.println("setup finished"); 
+#endif
 }
 
 void loop()
@@ -96,41 +105,35 @@ void loop()
     Serial.print(A_Values[i]);    
     Serial.print("|");
   }
-  Serial.println("-------------------------------------");
-
+  Serial.println("");
 #endif
+
   delay(A_Values_Period+1000);
 
 #else
+  unsigned long BeginMeasuring = millis();
+
   for (int i=0;i<sensor_SIZE;i++){
+    unsigned long forwardCurrent = millis();
 
     pinMode(sensorPins[i][0], INPUT_PULLUP);
     pinMode(sensorPins[i][1], OUTPUT);
     digitalWrite(sensorPins[i][1], LOW);
-  }
 
-  A_values_timestamp = millis();
+    delay(25);
 
-  delay(100);
-
-  for (int i=0;i<sensor_SIZE;i++){
-    A_Values[i] = 1023-analogRead(sensorPins[i][0]); //Attention à corriger ça
-  }
-
-  for (int i=0;i<sensor_SIZE;i++){
+    A_Values[i] = map(analogRead(sensorPins[i][0]),0,1023,1023,0);
 
     pinMode(sensorPins[i][0], OUTPUT);
+    pinMode(sensorPins[i][1], INPUT_PULLUP);
+
     digitalWrite(sensorPins[i][0], LOW);
-    digitalWrite(sensorPins[i][1], HIGH);
-  }
 
-  unsigned long timeWithCurrent = (unsigned long)(millis() - A_values_timestamp);
-  delay(timeWithCurrent);
+    unsigned long timeWithCurrent = (unsigned long)(millis() - forwardCurrent);
+    delay(timeWithCurrent);
 
-  for (int i=0;i<sensor_SIZE;i++){
-
-    digitalWrite(sensorPins[i][1], LOW);
-    digitalWrite(sensorPins[i][0], LOW);
+    pinMode(sensorPins[i][0], INPUT_PULLUP);
+    pinMode(sensorPins[i][1], INPUT_PULLUP);
   }
 
 #ifdef LOG_SERIAL
@@ -141,8 +144,15 @@ void loop()
   Serial.println();
 #endif
 
-  delay(A_Values_Period - 2*timeWithCurrent);
+  A_values_timestamp = millis();
 
+#ifdef LOG_SERIAL
+  Serial.print("delaying : ");    
+  Serial.print(A_Values_Period - ((unsigned long)millis() - BeginMeasuring));
+  Serial.println();
+#endif
+
+  delay(A_Values_Period - ((unsigned long)millis() - BeginMeasuring));
 #endif
 }
 
@@ -192,11 +202,11 @@ void writeSensorsAsBytes(){
 
   longToByte((unsigned long)(millis() - A_values_timestamp),buffer);
   buffer[sizeof(long)] = (byte)sensor_SIZE;
-  
+
   for (int i=0;i<sensor_SIZE;i++){
     intToByte(A_Values[i], &buffer[sizeof(long)+sizeof(byte)+sizeof(int)*i]);
   }
-  
+
   buffer[bufferSize-1] = 0x00; //semaphore
 
   Wire.write(buffer, bufferSize); 
@@ -230,7 +240,7 @@ long readLongFromEEPROM(int firstByte){
   for (int i = 0;i<sizeof(long);i++){
     buffer[i] = EEPROM.read(firstByte+i);
 #ifdef LOG_SERIAL
-    Serial.println(buffer[i]);
+    //Serial.println(buffer[i]);
 #endif
   }
   return ByteToLong(buffer);
@@ -276,6 +286,11 @@ long ByteToLong(byte *buffer){
   }
   return result;
 }
+
+
+
+
+
 
 
 
