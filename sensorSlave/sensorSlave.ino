@@ -1,12 +1,13 @@
 #include <Wire.h>
 #include <EEPROM.h>
+#include <DHT.h>
 
 /***************************************/
 /*     Config                          */
 /***************************************/
 
 #define DEFAULT_I2C_ADRESS 3           
-#define NUMBER_OF_SENSORS 6  // 4 on mini,uno - 6 on promini
+#define NUMBER_OF_SENSORS 2  // 4 on mini,uno, pro mini 168 - 6 on promini
 
 //#define LOG_SERIAL
 //#define FAKESENSORSWITHCOUNTERS
@@ -17,17 +18,17 @@ int i2cAdress = DEFAULT_I2C_ADRESS;
 
 const int allSsensorPins[][2] = {
   {
-    A0,5                                        }
+    A0,5                                          }
   ,{
-    A1,4                                        }
+    A1,4                                          }
   ,{
-    A2,3                                        }
+    A2,3                                          }
   ,{
-    A3,2                                        }
+    A3,2                                          }
   ,{
-    A6,6                                        }
+    A6,6                                          }
   ,{
-    A7,7                                        }
+    A7,7                                          }
 
 };
 
@@ -39,6 +40,10 @@ unsigned long A_values_timestamp = 0;
 volatile unsigned long A_Values_Period = 1000;
 volatile int last_command = 0;
 
+DHT dht(10, DHT22);
+int temperature;
+int humidity;
+
 #define COMMAND_READ_SENSORS 0
 #define COMMAND_SET_ADRESS 1
 #define COMMAND_SET_PERIOD 2
@@ -49,6 +54,8 @@ void setup()
 #ifdef LOG_SERIAL
   Serial.begin(9600);
   Serial.println("booting");
+
+//  pinMode(13,OUTPUT);
 #endif
 
   for (int i=0;i<sensor_SIZE;i++){
@@ -63,6 +70,8 @@ void setup()
     Serial.println("");
 #endif
   }
+
+  dht.begin();
 
   i2cAdress = readLongFromEEPROM(5);
   if (i2cAdress < 3 || i2cAdress > 77)
@@ -112,8 +121,9 @@ void loop()
 
 #else
   unsigned long BeginMeasuring = millis();
-
+  digitalWrite(13,HIGH);
   for (int i=0;i<sensor_SIZE;i++){
+
     unsigned long forwardCurrent = millis();
 
     pinMode(sensorPins[i][0], INPUT_PULLUP);
@@ -122,7 +132,7 @@ void loop()
 
     delay(25);
 
-    A_Values[i] = map(analogRead(sensorPins[i][0]),0,1023,1023,0);
+    A_Values[i] = map(analogRead(sensorPins[i][0]),0,1023,10000,0);
 
     pinMode(sensorPins[i][0], OUTPUT);
     pinMode(sensorPins[i][1], INPUT_PULLUP);
@@ -136,15 +146,13 @@ void loop()
     pinMode(sensorPins[i][1], INPUT_PULLUP);
   }
 
-#ifdef LOG_SERIAL
-  for (int i=0;i<sensor_SIZE;i++){
-    Serial.print(A_Values[i]);    
-    Serial.print("|");
-  }
-  Serial.println();
-#endif
-
+  digitalWrite(13,LOW);
   A_values_timestamp = millis();
+
+do{
+  humidity = dht.readHumidity()*100;
+  temperature = dht.readTemperature()*100;
+}while(isnan(humidity)||isnan(temperature));
 
 #ifdef LOG_SERIAL
   Serial.print("delaying : ");    
@@ -182,6 +190,7 @@ void receiveEvent(int len){
   case COMMAND_SET_PERIOD:
     A_Values_Period = readLong();
     writeLongInEEPROM(1, A_Values_Period);
+    delay(100);
     asm volatile ("  jmp 0");
     break;
 
@@ -189,6 +198,7 @@ void receiveEvent(int len){
     i2cAdress = readLong();
     writeLongInEEPROM(5, i2cAdress);
     asm volatile ("  jmp 0");
+    delay(100);
     break;
   }
 }
@@ -197,17 +207,34 @@ void receiveEvent(int len){
 
 // COMMAND_READ_SENSORS
 void writeSensorsAsBytes(){
-  int bufferSize = sizeof(long)+sizeof(byte)+sizeof(int)*(sensor_SIZE)+sizeof(byte);
+  // long millis      - since last measure
+  // int              - ambiant temp
+  // int              - humidity
+  // tiny int         - number of sensors
+  // ellipse of int   - sensor values
+  // byte             - 0x00 semaphore
+  
+  int bufferSize = sizeof(long)+sizeof(int)*2+sizeof(byte)+sizeof(int)*(sensor_SIZE)+sizeof(byte);
   byte buffer[bufferSize];
 
   longToByte((unsigned long)(millis() - A_values_timestamp),buffer);
-  buffer[sizeof(long)] = (byte)sensor_SIZE;
+  intToByte(temperature, &buffer[sizeof(long)]);
+  intToByte(humidity, &buffer[sizeof(long)+sizeof(int)]);
+  buffer[sizeof(long)+2*sizeof(int)] = (byte)sensor_SIZE;
 
   for (int i=0;i<sensor_SIZE;i++){
-    intToByte(A_Values[i], &buffer[sizeof(long)+sizeof(byte)+sizeof(int)*i]);
+    intToByte(A_Values[i], &buffer[sizeof(long)+sizeof(int)*2+sizeof(byte)+sizeof(int)*i]);
   }
 
   buffer[bufferSize-1] = 0x00; //semaphore
+
+#ifdef LOG_SERIAL
+  for (int i=0;i<bufferSize;i++){
+    Serial.print(buffer[i]);    
+    Serial.print("|");
+  }
+  Serial.println();
+#endif
 
   Wire.write(buffer, bufferSize); 
 }
@@ -286,6 +313,7 @@ long ByteToLong(byte *buffer){
   }
   return result;
 }
+
 
 
 

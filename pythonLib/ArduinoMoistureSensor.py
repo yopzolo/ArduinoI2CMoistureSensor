@@ -7,6 +7,8 @@ class ArduinoMoistureSensor (object):
 	def __init__(self, bus, adress):
 		self.sensorCount = 0
 		self.sensors = []
+		self.temperature = 0
+		self.humidity = 0
 		self.time = datetime.now()
 
 		self.bus = smbus.SMBus(bus)
@@ -14,17 +16,20 @@ class ArduinoMoistureSensor (object):
 
 	def read(self):
 		data = self.bus.read_i2c_block_data(self.busAdress,0) # TODO change the default register
-
+#		print str(data)+"\n"
 		timeOffset = 0
                 for i in range(0,4):
                         timeOffset += data[i] << ((3-i)*8)
                 self.time = datetime.now() - timedelta(milliseconds=timeOffset)
 
-		self.sensorCount = data[4]
+		self.temperature = ((data[4] << 8) + data[5] + 0.0)/100
+		self.humidity = ((data[6] << 8) + data[7] + 0.0)/100
+
+		self.sensorCount = data[8]
 		self.sensors = []
 
 		for i in range(0,self.sensorCount):
-			self.sensors.append((data[5+2*i] << 8)+ data[6+2*i])
+			self.sensors.append(((data[9+2*i] << 8)+ data[10+2*i] + 0.0)/100)
 
 	@property
 	def period(self):
